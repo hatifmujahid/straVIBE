@@ -7,7 +7,20 @@ import os from "node:os";
 // persistent store and pushing the new all-time total to the leaderboard.
 // See https://docs.claude.com/en/docs/claude-code/hooks
 const EVENT = "SessionEnd";
-const DEFAULT_INVOKER = "npx -y stravibe"; // published npm package; matches install.sh distribution
+
+// Pin the hook to the EXACT version that installed it. If the hook re-resolved
+// "latest" on every session end, a future (possibly compromised) publish would
+// auto-run on the user's machine with no action from them — a real supply-chain
+// vector. Pinning removes it; re-run `stravibe install-hook` after upgrading to
+// advance the pin. Falls back to unpinned if the version can't be read.
+function pkgVersion() {
+  try {
+    return JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
+  } catch {
+    return null;
+  }
+}
+const DEFAULT_INVOKER = pkgVersion() ? `npx -y stravibe@${pkgVersion()}` : "npx -y stravibe";
 
 function settingsPath(home = os.homedir()) {
   return path.join(home, ".claude", "settings.json");
@@ -31,10 +44,10 @@ function shellQuote(s) {
   return /[^\w@:/.\-]/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s;
 }
 
-/** The command string the hook will run. */
-export function buildHookCommand({ invoker = DEFAULT_INVOKER, api, handle } = {}) {
+/** The command string the hook will run. The backend is hardcoded, so the only
+ *  bake-in is the optional display handle. */
+export function buildHookCommand({ invoker = DEFAULT_INVOKER, handle } = {}) {
   let cmd = `${invoker} sync --quiet`;
-  if (api) cmd += ` --api ${shellQuote(api)}`;
   if (handle) cmd += ` --handle ${shellQuote(handle)}`;
   return cmd;
 }
@@ -45,13 +58,12 @@ export function buildHookCommand({ invoker = DEFAULT_INVOKER, api, handle } = {}
  * replaced, never duplicated.
  *
  * @param {object} [opts]
- * @param {string} [opts.command]  full command override (else built from invoker/api/handle)
- * @param {string} [opts.invoker]  how to launch the CLI (default: npx github form)
- * @param {string} [opts.api]      baked into the command for the hook's bare shell
+ * @param {string} [opts.command]  full command override (else built from invoker/handle)
+ * @param {string} [opts.invoker]  how to launch the CLI (default: pinned npm package)
  * @param {string} [opts.handle]   baked-in display name
  * @param {string} [opts.home]     override home dir (testing)
  */
-export function installHook({ home = os.homedir(), command, invoker, api, handle } = {}) {
+export function installHook({ home = os.homedir(), command, invoker, handle } = {}) {
   const file = settingsPath(home);
   const settings = readSettings(file);
   settings.hooks ??= {};
@@ -63,7 +75,7 @@ export function installHook({ home = os.homedir(), command, invoker, api, handle
   }
   settings.hooks[EVENT] = groups.filter((g) => !Array.isArray(g.hooks) || g.hooks.length > 0);
 
-  const cmd = command || buildHookCommand({ invoker, api, handle });
+  const cmd = command || buildHookCommand({ invoker, handle });
   settings.hooks[EVENT].push({ hooks: [{ type: "command", command: cmd }] });
 
   fs.mkdirSync(path.dirname(file), { recursive: true });

@@ -1,11 +1,11 @@
 #!/usr/bin/env sh
 # Two ways to install (both use the published npm package; require Node 18+):
-#   curl:  curl -fsSL https://raw.githubusercontent.com/hatifmujahid/strava-for-ai/master/install.sh | sh
+#   curl:  curl -fsSL https://raw.githubusercontent.com/hatifmujahid/straVIBE/master/install.sh | sh
 #   npm:   npm i -g stravibe && stravibe sync
 #
 # Folds your local Claude Code usage into an all-time score, submits it to the
 # leaderboard, and installs a SessionEnd hook so every future session auto-syncs.
-# The backend URL is hardcoded in the package; override with STRAVIBE_API if needed.
+# The backend URL is fixed inside the package and is not overridable.
 set -e
 
 PKG="${STRAVIBE_PKG:-stravibe}"                 # npm package name

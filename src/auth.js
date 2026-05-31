@@ -3,6 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { spawn } from "node:child_process";
 import { deviceId } from "./identity.js";
+import { authUrl, API_BASE } from "./config.js";
 
 const credDir = path.join(os.homedir(), ".stravibe");
 const credPath = path.join(credDir, "credentials.json");
@@ -37,18 +38,18 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * Device-authorization login. The backend owns the actual GitHub/Google OAuth;
  * the CLI just opens the browser and polls for a token.
  *
+ * Targets the one official backend (config.js authUrl) — there is no --api
+ * override, matching the locked ingest endpoint.
+ *
  * >>> SEAM AWAITING YOUR BACKEND'S AUTH CONTRACT <<<
- *   POST {api}/auth/cli/start  { device_id, provider } -> { user_code, verification_url, device_code, interval }
- *   POST {api}/auth/cli/poll   { device_code }         -> 202 (pending) | 200 { token, user }
+ *   POST {API_BASE}/auth/cli/start  { device_id, provider } -> { user_code, verification_url, device_code, interval }
+ *   POST {API_BASE}/auth/cli/poll   { device_code }         -> 202 (pending) | 200 { token, user }
  *
  * @param {object} opts
- * @param {string} opts.api       backend base url
  * @param {string} [opts.provider] "github" | "google" hint for the login page
  */
-export async function login({ api, provider }) {
-  if (!api) throw new Error("login requires --api <backend-url>");
-
-  const startRes = await fetch(`${api}/auth/cli/start`, {
+export async function login({ provider } = {}) {
+  const startRes = await fetch(authUrl("start"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ device_id: deviceId(), provider: provider || null }),
@@ -64,7 +65,7 @@ export async function login({ api, provider }) {
   const deadline = Date.now() + 5 * 60 * 1000;
   while (Date.now() < deadline) {
     await sleep(interval * 1000);
-    const pollRes = await fetch(`${api}/auth/cli/poll`, {
+    const pollRes = await fetch(authUrl("poll"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ device_code }),
@@ -72,7 +73,7 @@ export async function login({ api, provider }) {
     if (pollRes.status === 202) continue; // still pending
     if (!pollRes.ok) throw new Error(`auth poll failed: ${pollRes.status}`);
     const { token, user } = await pollRes.json();
-    saveCreds({ api, token, user, device_id: deviceId() });
+    saveCreds({ api: API_BASE, token, user, device_id: deviceId() });
     return user;
   }
   throw new Error("login timed out — please re-run `stravibe login`");

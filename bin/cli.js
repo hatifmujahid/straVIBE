@@ -4,7 +4,7 @@ import { sync } from "../src/submit.js";
 import { login, clearCreds, loadCreds } from "../src/auth.js";
 import { loadStore, storePath, resetStore } from "../src/store.js";
 import { installHook, uninstallHook, hookStatus } from "../src/hook.js";
-import { DEFAULT_API } from "../src/config.js";
+import { INGEST_URL } from "../src/config.js";
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -39,21 +39,12 @@ async function runScan() {
 // `sync` (and its alias `submit`): fold new calls into the persistent local
 // store, then push the all-time cumulative total to the leaderboard.
 async function runSync() {
-  const api = flag("api", process.env.STRAVIBE_API);
   const handle = flag("handle", process.env.STRAVIBE_HANDLE);
-  const dryRun = has("dry-run");
   const quiet = has("quiet"); // used by the SessionEnd hook: silent, never disrupts the session
   try {
-    const r = await sync({ api, handle, dryRun });
+    const r = await sync({ handle });
     if (quiet) return;
     const delta = `+${n(r.added.total)} tokens / +${n(r.added.calls)} calls since last sync`;
-    if (!r.sent) {
-      const why = dryRun ? "(dry run)" : "(no --api given and not linked)";
-      console.log(`${why} ${delta}.  Cumulative all-time: ${n(r.payload.totals.total)} tokens.\n`);
-      console.log(JSON.stringify(r.payload, null, 2));
-      if (!dryRun) console.log(`\nSet --api <url> (or STRAVIBE_API), or run \`stravibe login\`, to submit.`);
-      return;
-    }
     const who = r.linked
       ? `${r.linked.provider || "account"}:${r.linked.login || r.linked.email || r.linked.id}`
       : r.payload.device_id + " (anonymous — run `stravibe login` to link)";
@@ -66,13 +57,12 @@ async function runSync() {
 }
 
 async function runLogin() {
-  const api = flag("api", process.env.STRAVIBE_API) || DEFAULT_API;
   const provider = flag("with"); // github | google
-  const user = await login({ api, provider });
+  const user = await login({ provider });
   console.log(`linked as ${user?.provider || ""} ${user?.login || user?.email || user?.id || "(unknown)"} ✓`);
-  // Offer auto-sync now that we have a saved api to bake into the hook.
-  if (api && !hookStatus().installed) {
-    const { file } = installHook({ api });
+  // Offer auto-sync on first link.
+  if (!hookStatus().installed) {
+    const { file } = installHook({});
     console.log(`auto-sync enabled — Claude Code SessionEnd hook added to ${file}`);
     console.log(`(disable any time with \`stravibe uninstall-hook\`)`);
   }
@@ -87,7 +77,7 @@ function runWhoami() {
   const c = loadCreds();
   const store = loadStore();
   const hook = hookStatus();
-  if (!c?.user) console.log("not linked (anonymous). Run `stravibe login --api <url> --with github`.");
+  if (!c?.user) console.log("not linked (anonymous). Run `stravibe login --with github`.");
   else console.log(`linked as ${c.user.provider || ""} ${c.user.login || c.user.email || c.user.id}`);
   console.log(`all-time score: ${n(store.cumulative.total)} tokens / ${n(store.cumulative.calls)} calls  (store: ${storePath()})`);
   if (store.last_synced) console.log(`last synced: ${store.last_synced}`);
@@ -95,14 +85,13 @@ function runWhoami() {
 }
 
 function runInstallHook() {
-  const api = flag("api", process.env.STRAVIBE_API) || loadCreds()?.api;
   const handle = flag("handle", process.env.STRAVIBE_HANDLE);
   const invoker = flag("invoker");
   const command = flag("cmd");
-  const { file, command: cmd } = installHook({ command, invoker, api, handle });
+  const { file, command: cmd } = installHook({ command, invoker, handle });
   console.log(`installed Claude Code SessionEnd hook → ${file}`);
   console.log(`  command: ${cmd}`);
-  if (!api && !command) console.log(`  endpoint: default backend (${DEFAULT_API}) — pass --api to override.`);
+  console.log(`  endpoint: ${INGEST_URL} (fixed)`);
   console.log(`Your usage now syncs automatically every time a Claude Code session ends.`);
 }
 
@@ -141,17 +130,17 @@ async function main() {
 
 Usage:
   stravibe scan   [--days 90] [--json]              show local rolling-window usage, no network
-  stravibe sync   [--api URL] [--handle NAME] [--dry-run] [--quiet]
-                                                   fold new calls into your all-time score + submit
-  stravibe login  --api URL [--with github|google]  link account (browser) + enable auto-sync
-  stravibe install-hook   [--api URL] [--handle NAME]  auto-sync on every Claude Code session end
+  stravibe sync   [--handle NAME] [--quiet]         fold new calls into your all-time score + submit
+  stravibe login  [--with github|google]            link account (browser) + enable auto-sync
+  stravibe install-hook   [--handle NAME]           auto-sync on every Claude Code session end
   stravibe uninstall-hook                          disable auto-sync
   stravibe whoami | logout | reset [--yes]
 
 \`submit\` is a back-compat alias of \`sync\`. The score is cumulative and persisted at
 ~/.stravibe/usage.json, so every LLM call keeps counting even after transcripts age out.
 
-Env: STRAVIBE_API, STRAVIBE_HANDLE
+The leaderboard backend is fixed (built in) — there is no --api/STRAVIBE_API override.
+Env: STRAVIBE_HANDLE
 Agents: Claude Code (verified); Codex/Gemini CLI (experimental); Cursor/Copilot need OAuth.
 Privacy: only token counts, model names, agent names, and timestamps leave your machine.`);
   }

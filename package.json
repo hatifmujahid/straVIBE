@@ -19,9 +19,17 @@
   ],
   "scripts": {
     "scan": "node bin/cli.js scan",
-    "sync": "node bin/cli.js sync --dry-run",
-    "submit": "node bin/cli.js sync --dry-run"
+    "test": "node --test"
   },
   "keywords": ["claude", "claude-code", "llm", "tokens", "usage", "leaderboard"],
-  "license": "MIT"
+  "author": "Muhammad Hatif Mujahid",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hatifmujahid/straVIBE.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hatifmujahid/straVIBE/issues"
+  },
+  "homepage": "https://github.com/hatifmujahid/straVIBE#readme"
 }

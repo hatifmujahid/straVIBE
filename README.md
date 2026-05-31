@@ -1,5 +1,7 @@
 # straVIBE
 
+[![CI](https://github.com/hatifmujahid/straVIBE/actions/workflows/ci.yml/badge.svg)](https://github.com/hatifmujahid/straVIBE/actions/workflows/ci.yml)
+
 Scan your local AI **coding-agent** token usage and submit aggregate counts to a
 leaderboard backend, optionally linked to your GitHub/Google account.
 
@@ -32,8 +34,7 @@ payload. See `src/collectors/*.js` — only numeric/metadata fields are touched.
 ```sh
 npx stravibe scan --days 90        # local rolling-window view, no network
 npx stravibe login --with github   # link your GitHub/Google account + enable auto-sync
-npx stravibe sync --dry-run        # fold new calls into the store, preview payload
-npx stravibe sync                  # + submit all-time total to the leaderboard
+npx stravibe sync                  # fold new calls into your all-time score + submit
 npx stravibe install-hook          # auto-sync on each Claude Code session end
 npx stravibe whoami | npx stravibe uninstall-hook | npx stravibe reset --yes
 ```
@@ -70,7 +71,7 @@ npx -y stravibe sync --handle "your-name"
 Or the one-line curl installer (bootstraps via the npm package, scans + enables auto-sync):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/hatifmujahid/strava-for-ai/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/hatifmujahid/straVIBE/master/install.sh | sh
 ```
 
 ## Identity / account linking

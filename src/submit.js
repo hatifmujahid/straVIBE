@@ -1,7 +1,7 @@
 import { loadCreds } from "./auth.js";
 import { deviceId } from "./identity.js";
 import { accumulate, saveStore } from "./store.js";
-import { DEFAULT_API } from "./config.js";
+import { INGEST_URL } from "./config.js";
 
 export { deviceId };
 
@@ -45,32 +45,25 @@ export function buildPayload(store, { handle } = {}) {
  * always send the full cumulative snapshot (which the backend replaces), the
  * next successful sync self-heals any dropped submission.
  *
+ * The submission target is the hardcoded INGEST_URL — there is no --api/env
+ * override, so installs always report to the one official backend.
+ *
  * @param {object} opts
- * @param {string} [opts.api]     ingest endpoint; falls back to the linked
- *                                account's saved api (so the hook works with no env)
  * @param {string} [opts.handle]  optional public display name
- * @param {boolean} [opts.dryRun] build + persist locally, but don't send
  * @param {string} [opts.home]    override home dir (testing)
  */
-export async function sync({ api, handle, dryRun = false, home } = {}) {
+export async function sync({ handle, home } = {}) {
   const creds = loadCreds();
-  // a SessionEnd hook / curl installer runs without env or flags, so fall all
-  // the way back to the hardcoded DEFAULT_API.
-  api = api || creds?.api || DEFAULT_API;
 
   const { store, added } = await accumulate({ home });
   saveStore(store);
 
   const payload = buildPayload(store, { handle });
 
-  if (dryRun || !api) {
-    return { sent: false, payload, added, linked: creds?.user ?? null, store };
-  }
-
   const headers = { "content-type": "application/json" };
   if (creds?.token) headers.authorization = `Bearer ${creds.token}`; // attaches to GitHub/Google identity
 
-  const res = await fetch(api, {
+  const res = await fetch(INGEST_URL, {
     method: "POST",
     headers,
     body: JSON.stringify(payload),

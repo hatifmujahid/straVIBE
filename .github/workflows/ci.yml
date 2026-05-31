@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # Zero runtime dependencies, so there's nothing to install.
+      - name: Syntax check
+        run: |
+          node --check bin/cli.js
+          for f in src/*.js src/collectors/*.js; do node --check "$f"; done
+      - name: Privacy + payload tests
+        run: npm test
+      - name: Verify publishable tarball (no secrets, no stray files)
+        run: npm pack --dry-run
