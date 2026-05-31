@@ -4,6 +4,7 @@ import { sync } from "../src/submit.js";
 import { login, clearCreds, loadCreds } from "../src/auth.js";
 import { loadStore, storePath, resetStore } from "../src/store.js";
 import { installHook, uninstallHook, hookStatus } from "../src/hook.js";
+import { DEFAULT_API } from "../src/config.js";
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -65,7 +66,7 @@ async function runSync() {
 }
 
 async function runLogin() {
-  const api = flag("api", process.env.STRAVIBE_API);
+  const api = flag("api", process.env.STRAVIBE_API) || DEFAULT_API;
   const provider = flag("with"); // github | google
   const user = await login({ api, provider });
   console.log(`linked as ${user?.provider || ""} ${user?.login || user?.email || user?.id || "(unknown)"} ✓`);
@@ -101,7 +102,7 @@ function runInstallHook() {
   const { file, command: cmd } = installHook({ command, invoker, api, handle });
   console.log(`installed Claude Code SessionEnd hook → ${file}`);
   console.log(`  command: ${cmd}`);
-  if (!api && !command) console.log(`  note: no --api saved; the hook will accumulate locally until you \`stravibe login\` or pass --api.`);
+  if (!api && !command) console.log(`  endpoint: default backend (${DEFAULT_API}) — pass --api to override.`);
   console.log(`Your usage now syncs automatically every time a Claude Code session ends.`);
 }
 

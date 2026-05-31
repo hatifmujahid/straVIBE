@@ -30,16 +30,16 @@ payload. See `src/collectors/*.js` — only numeric/metadata fields are touched.
 ## Use
 
 ```sh
-npx stravibe scan --days 90                        # local rolling-window view, no network
-npx stravibe login --api https://api.example.com --with github   # link account + enable auto-sync
-npx stravibe sync --dry-run                        # fold new calls into the store, preview payload
-npx stravibe sync --api https://api.example.com/v1/import        # + submit all-time total
-npx stravibe install-hook --api https://api.example.com/v1/import  # auto-sync on each session end
+npx stravibe scan --days 90        # local rolling-window view, no network
+npx stravibe login --with github   # link your GitHub/Google account + enable auto-sync
+npx stravibe sync --dry-run        # fold new calls into the store, preview payload
+npx stravibe sync                  # + submit all-time total to the leaderboard
+npx stravibe install-hook          # auto-sync on each Claude Code session end
 npx stravibe whoami | npx stravibe uninstall-hook | npx stravibe reset --yes
 ```
 
-`submit` still works as a back-compat alias of `sync`. `--days` only affects the
-read-only `scan` view — the submitted score is always the all-time cumulative total.
+`submit` is a back-compat alias of `sync`; `--days` only affects the read-only
+`scan` view — the submitted score is always the all-time cumulative total.
 
 ### How the cumulative score works
 
@@ -53,13 +53,21 @@ read-only `scan` view — the submitted score is always the all-time cumulative 
    hook that runs `stravibe sync --quiet`, so usage syncs automatically — a failed
    background sync exits quietly and never disrupts your session.
 
-Run on any PC straight from GitHub (no clone/install):
+Install globally from npm (one-liner — no API URL needed, it's baked in):
 
 ```sh
-npx -y github:hatifmujahid/strava-for-ai sync --handle "your-name" --api https://your-backend/v1/import
+npm i -g stravibe && stravibe sync --handle "your-name"
 ```
 
-Or one-line curl install:
+Then enable auto-sync once: `stravibe install-hook`.
+
+Or run ad-hoc with no install — `npx` fetches the published package on demand:
+
+```sh
+npx -y stravibe sync --handle "your-name"
+```
+
+Or the one-line curl installer (bootstraps via the npm package, scans + enables auto-sync):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/hatifmujahid/strava-for-ai/master/install.sh | sh

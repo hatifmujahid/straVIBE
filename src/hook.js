@@ -7,7 +7,7 @@ import os from "node:os";
 // persistent store and pushing the new all-time total to the leaderboard.
 // See https://docs.claude.com/en/docs/claude-code/hooks
 const EVENT = "SessionEnd";
-const DEFAULT_INVOKER = "npx -y github:hatifmujahid/strava-for-ai"; // matches install.sh distribution
+const DEFAULT_INVOKER = "npx -y stravibe"; // published npm package; matches install.sh distribution
 
 function settingsPath(home = os.homedir()) {
   return path.join(home, ".claude", "settings.json");

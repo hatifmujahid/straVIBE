@@ -1,6 +1,7 @@
 import { loadCreds } from "./auth.js";
 import { deviceId } from "./identity.js";
 import { accumulate, saveStore } from "./store.js";
+import { DEFAULT_API } from "./config.js";
 
 export { deviceId };
 
@@ -53,7 +54,9 @@ export function buildPayload(store, { handle } = {}) {
  */
 export async function sync({ api, handle, dryRun = false, home } = {}) {
   const creds = loadCreds();
-  api = api || creds?.api || null; // a SessionEnd hook runs without env vars
+  // a SessionEnd hook / curl installer runs without env or flags, so fall all
+  // the way back to the hardcoded DEFAULT_API.
+  api = api || creds?.api || DEFAULT_API;
 
   const { store, added } = await accumulate({ home });
   saveStore(store);
