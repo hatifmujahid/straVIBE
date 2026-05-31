@@ -1,0 +1,4 @@
+node_modules/
+*.log
+.aiusage/
+.DS_Store
