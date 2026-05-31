@@ -31,7 +31,7 @@ export function buildPayload(summary, { handle } = {}) {
     by_agent: summary.by_agent,
     by_model: summary.by_model,
     by_day: summary.by_day,
-    client: { name: "ai-usage-tracker", version: "0.1.0" },
+    client: { name: "stravibe", version: "0.1.0" },
   };
 }
 

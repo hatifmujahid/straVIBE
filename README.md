@@ -1,4 +1,4 @@
-# ai-usage-tracker
+# straVIBE
 
 Scan your local AI **coding-agent** token usage (last N days) and submit aggregate
 counts to a leaderboard backend, optionally linked to your GitHub/Google account.
@@ -25,11 +25,11 @@ payload. See `src/collectors/*.js` — only numeric/metadata fields are touched.
 ## Use
 
 ```sh
-npx aiusage scan --days 90                       # local only, no network
-npx aiusage login --api https://api.example.com --with github   # link account (browser)
-npx aiusage submit --days 90 --dry-run           # preview the exact payload
-npx aiusage submit --days 90 --api https://api.example.com/v1/import
-npx aiusage whoami | npx aiusage logout
+npx stravibe scan --days 90                       # local only, no network
+npx stravibe login --api https://api.example.com --with github   # link account (browser)
+npx stravibe submit --days 90 --dry-run           # preview the exact payload
+npx stravibe submit --days 90 --api https://api.example.com/v1/import
+npx stravibe whoami | npx stravibe logout
 ```
 
 Run on any PC straight from GitHub (no clone/install):

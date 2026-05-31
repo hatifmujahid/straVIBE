@@ -4,7 +4,7 @@ import os from "node:os";
 import { spawn } from "node:child_process";
 import { deviceId } from "./identity.js";
 
-const credDir = path.join(os.homedir(), ".aiusage");
+const credDir = path.join(os.homedir(), ".stravibe");
 const credPath = path.join(credDir, "credentials.json");
 
 export function loadCreds() {
@@ -75,5 +75,5 @@ export async function login({ api, provider }) {
     saveCreds({ api, token, user, device_id: deviceId() });
     return user;
   }
-  throw new Error("login timed out — please re-run `aiusage login`");
+  throw new Error("login timed out — please re-run `stravibe login`");
 }
