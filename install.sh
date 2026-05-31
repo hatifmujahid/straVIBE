@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
 # One-line install for testers:
-#   curl -fsSL https://raw.githubusercontent.com/<OWNER>/<REPO>/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/hatifmujahid/strava-for-ai/master/install.sh | sh
 #
 # Reads the last 90 days of local Claude Code usage and submits aggregate token
 # counts to the leaderboard backend. Requires Node 18+.
 set -e
 
-REPO="${AIUSAGE_REPO:-OWNER/REPO}"                                  # <-- your GitHub owner/repo
+REPO="${AIUSAGE_REPO:-hatifmujahid/strava-for-ai}"                  # GitHub owner/repo
 API_URL="${AIUSAGE_API:-https://randi-unparticularized-carri.ngrok-free.dev/v1/import}"  # <-- your tunnel/ingest URL
 DAYS="${AIUSAGE_DAYS:-90}"
 HANDLE="${AIUSAGE_HANDLE:-$(whoami)}"

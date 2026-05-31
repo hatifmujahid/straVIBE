@@ -32,10 +32,16 @@ npx aiusage submit --days 90 --api https://api.example.com/v1/import
 npx aiusage whoami | npx aiusage logout
 ```
 
-One-line install for end users (after you publish + set the host in `install.sh`):
+Run on any PC straight from GitHub (no clone/install):
 
 ```sh
-curl -fsSL https://your-host/install.sh | sh
+npx -y github:hatifmujahid/strava-for-ai submit --days 90 --handle "your-name" --api https://your-backend/v1/import
+```
+
+Or one-line curl install:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/hatifmujahid/strava-for-ai/master/install.sh | sh
 ```
 
 ## Identity / account linking
