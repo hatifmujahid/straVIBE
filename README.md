@@ -74,21 +74,6 @@ Or the one-line curl installer (bootstraps via the npm package, scans + enables 
 curl -fsSL https://raw.githubusercontent.com/hatifmujahid/straVIBE/master/install.sh | sh
 ```
 
-## Identity / account linking
-
-Device-authorization flow (like `gh auth login`). **The backend owns the GitHub/Google
-OAuth** — the CLI never holds client secrets. If the user hasn't linked, submissions
-fall back to an anonymous, stable `device_id` (a salted machine hash, no PII), which
-the backend can later merge into a linked account.
-
-## Two seams awaiting your backend dev's spec
-
-1. **Ingest** — `src/submit.js` → `buildPayload()` + the POST URL. Reshape to match
-   your API; `Authorization: Bearer <token>` is attached automatically when linked.
-2. **Auth** — `src/auth.js`. Provisional contract:
-   - `POST {api}/auth/cli/start { device_id, provider } -> { user_code, verification_url, device_code, interval }`
-   - `POST {api}/auth/cli/poll  { device_code } -> 202 pending | 200 { token, user }`
-
 ## Leaderboard metric note
 
 Claude Code is cache-heavy: ~2.2M input+output vs ~244M **cache-read** in this 90-day
