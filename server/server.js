@@ -46,7 +46,9 @@ const server = http.createServer(async (req, res) => {
       return send(res, 400, { error: "invalid json" });
     }
     const key = p.device_id || p.handle || "anon";
-    // replace (not add) — a submission is the full 90-day window, so re-runs just update
+    // Replace (not add). The client now sends its full ALL-TIME cumulative total
+    // (mode:"cumulative") from its local store, and that number only ever grows —
+    // so replacing on each sync is correct and idempotent (re-sends are harmless).
     users.set(key, {
       device_id: p.device_id,
       handle: p.handle,

@@ -19,7 +19,8 @@
   ],
   "scripts": {
     "scan": "node bin/cli.js scan",
-    "submit": "node bin/cli.js submit --dry-run"
+    "sync": "node bin/cli.js sync --dry-run",
+    "submit": "node bin/cli.js sync --dry-run"
   },
   "keywords": ["claude", "claude-code", "llm", "tokens", "usage", "leaderboard"],
   "license": "MIT"

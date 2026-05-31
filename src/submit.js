@@ -1,56 +1,67 @@
-import { scanUsage } from "./scan.js";
 import { loadCreds } from "./auth.js";
 import { deviceId } from "./identity.js";
+import { accumulate, saveStore } from "./store.js";
 
 export { deviceId };
 
 /**
- * Build the request body sent to your backend.
+ * Build the leaderboard request body from the persistent all-time store.
  *
  * >>> THIS IS THE SEAM AWAITING YOUR API SPEC <<<
- * Replace the field names / shape here to match the exact payload your backend
- * expects. It currently sends ONLY aggregate counts — no content, paths, or names.
+ * Sends ONLY aggregate counts — no content, paths, or names. `mode:"cumulative"`
+ * signals the totals are all-time (not a 90-day window), so the backend can keep
+ * REPLACE semantics: this number only ever grows, and re-sending is safe.
  */
-export function buildPayload(summary, { handle } = {}) {
+export function buildPayload(store, { handle } = {}) {
+  const c = store.cumulative;
   return {
-    device_id: deviceId(),
+    device_id: store.device_id || deviceId(),
     handle: handle || null, // optional display name for the leaderboard
-    window_days: summary.days,
-    since: summary.since,
-    until: summary.until,
+    mode: "cumulative",
+    since: store.first_synced,
+    until: store.last_synced,
     totals: {
-      input: summary.tokens.input,
-      output: summary.tokens.output,
-      cache_read: summary.tokens.cache_read,
-      cache_write: summary.tokens.cache_write,
-      total: summary.total,
+      input: c.tokens.input,
+      output: c.tokens.output,
+      cache_read: c.tokens.cache_read,
+      cache_write: c.tokens.cache_write,
+      total: c.total,
     },
-    calls: summary.calls,
-    sessions: summary.sessions,
-    agents: summary.agents_scanned,
-    by_agent: summary.by_agent,
-    by_model: summary.by_model,
-    by_day: summary.by_day,
+    calls: c.calls,
+    sessions: store.sessions?.length ?? 0,
+    agents: Object.keys(c.by_agent),
+    by_agent: c.by_agent,
+    by_model: c.by_model,
+    by_day: c.by_day,
     client: { name: "stravibe", version: "0.1.0" },
   };
 }
 
 /**
- * Scan local history and submit it to the leaderboard backend.
+ * Accumulate new local usage into the persistent store, then submit the
+ * all-time totals to the leaderboard. The store is saved BEFORE the network
+ * call, so local history is durable even if the submission fails; because we
+ * always send the full cumulative snapshot (which the backend replaces), the
+ * next successful sync self-heals any dropped submission.
+ *
  * @param {object} opts
- * @param {string} opts.api      backend endpoint (e.g. https://api.example.com/v1/import)
- * @param {string} [opts.handle] optional public display name
- * @param {number} [opts.days=90]
- * @param {boolean} [opts.dryRun] print the payload instead of sending
+ * @param {string} [opts.api]     ingest endpoint; falls back to the linked
+ *                                account's saved api (so the hook works with no env)
+ * @param {string} [opts.handle]  optional public display name
+ * @param {boolean} [opts.dryRun] build + persist locally, but don't send
+ * @param {string} [opts.home]    override home dir (testing)
  */
-export async function submit({ api, handle, days = 90, dryRun = false } = {}) {
-  const summary = await scanUsage({ days });
-  if (summary.error) throw new Error(summary.error);
-  const payload = buildPayload(summary, { handle });
-
+export async function sync({ api, handle, dryRun = false, home } = {}) {
   const creds = loadCreds();
+  api = api || creds?.api || null; // a SessionEnd hook runs without env vars
+
+  const { store, added } = await accumulate({ home });
+  saveStore(store);
+
+  const payload = buildPayload(store, { handle });
+
   if (dryRun || !api) {
-    return { sent: false, payload, linked: creds?.user ?? null };
+    return { sent: false, payload, added, linked: creds?.user ?? null, store };
   }
 
   const headers = { "content-type": "application/json" };
@@ -69,5 +80,12 @@ export async function submit({ api, handle, days = 90, dryRun = false } = {}) {
   } catch {
     body = text;
   }
-  return { sent: true, status: res.status, response: body, payload, linked: creds?.user ?? null };
+  return { sent: true, status: res.status, response: body, payload, added, linked: creds?.user ?? null, store };
+}
+
+// Back-compat alias. `submit` used to send a 90-day window; it now accumulates
+// into the persistent store and sends the all-time cumulative total (the score
+// no longer drops old calls). `--days` only affects the read-only `scan` view.
+export async function submit(opts = {}) {
+  return sync(opts);
 }

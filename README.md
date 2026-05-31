@@ -1,7 +1,12 @@
 # straVIBE
 
-Scan your local AI **coding-agent** token usage (last N days) and submit aggregate
-counts to a leaderboard backend, optionally linked to your GitHub/Google account.
+Scan your local AI **coding-agent** token usage and submit aggregate counts to a
+leaderboard backend, optionally linked to your GitHub/Google account.
+
+Your score is **cumulative and all-time**: a small ledger at `~/.stravibe/usage.json`
+remembers what's already been counted (a per-provider timestamp watermark), so every
+new LLM call keeps adding to your total — even after the agent's transcripts age past
+90 days or get deleted. Install the Claude Code hook and it syncs itself.
 
 ## Agent support
 
@@ -25,17 +30,33 @@ payload. See `src/collectors/*.js` — only numeric/metadata fields are touched.
 ## Use
 
 ```sh
-npx stravibe scan --days 90                       # local only, no network
-npx stravibe login --api https://api.example.com --with github   # link account (browser)
-npx stravibe submit --days 90 --dry-run           # preview the exact payload
-npx stravibe submit --days 90 --api https://api.example.com/v1/import
-npx stravibe whoami | npx stravibe logout
+npx stravibe scan --days 90                        # local rolling-window view, no network
+npx stravibe login --api https://api.example.com --with github   # link account + enable auto-sync
+npx stravibe sync --dry-run                        # fold new calls into the store, preview payload
+npx stravibe sync --api https://api.example.com/v1/import        # + submit all-time total
+npx stravibe install-hook --api https://api.example.com/v1/import  # auto-sync on each session end
+npx stravibe whoami | npx stravibe uninstall-hook | npx stravibe reset --yes
 ```
+
+`submit` still works as a back-compat alias of `sync`. `--days` only affects the
+read-only `scan` view — the submitted score is always the all-time cumulative total.
+
+### How the cumulative score works
+
+1. `sync` scans all local transcripts and folds every event **newer than the stored
+   per-provider watermark** (`claude-code` / `codex-cli` / `gemini-cli`) into
+   `~/.stravibe/usage.json`, then advances the watermark. Re-runs add nothing — it's
+   idempotent, so calls are never double-counted.
+2. It submits the full **all-time** total. The backend uses replace-semantics, which is
+   safe because the number only grows; a dropped submission self-heals on the next sync.
+3. `install-hook` (also auto-offered after `login`) adds a Claude Code **SessionEnd**
+   hook that runs `stravibe sync --quiet`, so usage syncs automatically — a failed
+   background sync exits quietly and never disrupts your session.
 
 Run on any PC straight from GitHub (no clone/install):
 
 ```sh
-npx -y github:hatifmujahid/strava-for-ai submit --days 90 --handle "your-name" --api https://your-backend/v1/import
+npx -y github:hatifmujahid/strava-for-ai sync --handle "your-name" --api https://your-backend/v1/import
 ```
 
 Or one-line curl install:
@@ -61,6 +82,8 @@ the backend can later merge into a linked account.
 
 ## Leaderboard metric note
 
-Claude Code is cache-heavy: ~2.1M input+output here vs ~237M **cache-read** over 90
-days. Decide which number ranks the board (in+out, or weighted incl. cache) before
-wiring the UI — it shifts standings ~100×.
+Claude Code is cache-heavy: ~2.2M input+output vs ~244M **cache-read** in this 90-day
+sample. Decide which number ranks the board (in+out, or weighted incl. cache) before
+wiring the UI — it shifts standings ~100×. The store keeps all four counts
+(`input` / `output` / `cache_read` / `cache_write`) so you can change the metric later
+without re-scanning.
