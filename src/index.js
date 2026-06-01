@@ -6,3 +6,4 @@ export { emptyAggregate, foldEvent } from "./aggregate.js";
 export { deviceId } from "./identity.js";
 export { login, loadCreds, saveCreds, clearCreds } from "./auth.js";
 export { collectors, detectUnsupported } from "./collectors/index.js";
+export { countEnvironment } from "./collectors/environment.js";

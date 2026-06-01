@@ -51,7 +51,9 @@ function writeFixtureHome() {
 
 const ALLOWED_TOP_LEVEL = new Set([
   "device_id", "handle", "mode", "since", "until",
-  "totals", "calls", "sessions", "agents", "by_agent", "by_model", "by_day", "client",
+  "totals", "calls", "sessions", "agents", "by_agent", "by_model", "by_day",
+  "environment", // { skills, agents, mcp_servers } — counts only, no names
+  "client",
 ]);
 
 test("payload contains only allowlisted top-level keys", async () => {
@@ -67,6 +69,9 @@ test("payload contains only allowlisted top-level keys", async () => {
     assert.equal(payload.calls, 1);
     assert.deepEqual(payload.agents, ["claude-code"]);
     assert.ok(payload.by_model["claude-opus-4-8"], "model name should be present");
+    // environment is counts-only: every value a number, no names that could leak
+    for (const v of Object.values(payload.environment))
+      assert.equal(typeof v, "number", "environment must report counts, never names");
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }

@@ -5,6 +5,8 @@ import { claudeCode } from "./claude.js";
 import { codexCli } from "./codex.js";
 import { geminiCli } from "./gemini.js";
 
+export { countEnvironment } from "./environment.js";
+
 // Collectors that read token usage from local files.
 export const collectors = [claudeCode, codexCli, geminiCli];
 

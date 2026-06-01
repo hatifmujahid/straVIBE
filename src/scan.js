@@ -1,5 +1,6 @@
 import os from "node:os";
 import { collectors, detectUnsupported } from "./collectors/index.js";
+import { countEnvironment } from "./collectors/environment.js";
 import { emptyAggregate, foldEvent } from "./aggregate.js";
 
 /**
@@ -58,6 +59,7 @@ export async function scanUsage({ days = 90, agents, experimental = true, home =
     agents_scanned: [],
     agents_experimental: [],
     detected_unsupported: detectUnsupported(home),
+    environment: countEnvironment(home),
     files_scanned: 0,
     skipped_lines: 0,
   };

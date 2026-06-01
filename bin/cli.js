@@ -34,7 +34,8 @@ Usage:
 The leaderboard backend is fixed (built in) — there is no --api/STRAVIBE_API override.
 Env: STRAVIBE_HANDLE
 Agents: Claude Code (verified); Codex/Gemini CLI (experimental); Cursor/Copilot need OAuth.
-Privacy: only token counts, model names, agent names, and timestamps leave your machine.`);
+Privacy: only token counts, model names, agent names, timestamps, and setup counts
+(how many skills/agents/MCP servers — never their names) leave your machine.`);
 }
 
 async function runScan() {
@@ -46,6 +47,8 @@ async function runScan() {
   console.log(`  agents: ${s.agents_scanned.join(", ") || "none"}   sessions: ${s.sessions}   calls: ${n(s.calls)}`);
   console.log(`  input ${n(s.tokens.input)}  |  output ${n(s.tokens.output)}  |  cache_read ${n(s.tokens.cache_read)}  |  cache_write ${n(s.tokens.cache_write)}`);
   console.log(`  TOTAL (in+out): ${n(s.total)}`);
+  const e = s.environment;
+  if (e) console.log(`  setup: ${e.skills} skills  |  ${e.agents} agents  |  ${e.mcp_servers} MCP servers`);
   const ags = Object.entries(s.by_agent);
   if (ags.length) {
     console.log(`\n  by agent:`);

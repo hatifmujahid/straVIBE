@@ -1,6 +1,7 @@
 import { loadCreds } from "./auth.js";
 import { deviceId } from "./identity.js";
 import { accumulate, saveStore } from "./store.js";
+import { countEnvironment } from "./collectors/environment.js";
 import { INGEST_URL } from "./config.js";
 
 export { deviceId };
@@ -12,8 +13,12 @@ export { deviceId };
  * Sends ONLY aggregate counts — no content, paths, or names. `mode:"cumulative"`
  * signals the totals are all-time (not a 90-day window), so the backend can keep
  * REPLACE semantics: this number only ever grows, and re-sending is safe.
+ *
+ * `environment` is a CURRENT inventory snapshot (skills/agents/MCP counts), not
+ * part of the cumulative store — it reflects the setup at submit time. Counts
+ * only; no skill/agent/server names are sent.
  */
-export function buildPayload(store, { handle } = {}) {
+export function buildPayload(store, { handle, environment = countEnvironment() } = {}) {
   const c = store.cumulative;
   return {
     device_id: store.device_id || deviceId(),
@@ -34,6 +39,7 @@ export function buildPayload(store, { handle } = {}) {
     by_agent: c.by_agent,
     by_model: c.by_model,
     by_day: c.by_day,
+    environment, // { skills, agents, mcp_servers } — current setup, counts only
     client: { name: "stravibe", version: "0.1.0" },
   };
 }
@@ -67,7 +73,7 @@ export async function sync({ handle, home } = {}) {
   const { store, added } = await accumulate({ home });
   saveStore(store);
 
-  const payload = buildPayload(store, { handle });
+  const payload = buildPayload(store, { handle, environment: countEnvironment(home) });
 
   const headers = { "content-type": "application/json", authorization: `Bearer ${creds.token}` };
 
