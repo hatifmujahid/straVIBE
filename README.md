@@ -73,7 +73,8 @@ npx stravibe whoami | npx stravibe uninstall-hook | npx stravibe reset --yes
 Install globally from npm (one-liner — no API URL needed, it's baked in):
 
 ```sh
-npm i -g stravibe && stravibe login
+npm i -g stravibe
+npm stravibe login
 ```
 
 `login` submits your last 90 days and enables auto-sync in one step. Already
