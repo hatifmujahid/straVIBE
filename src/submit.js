@@ -40,7 +40,7 @@ export function buildPayload(store, { handle, environment = countEnvironment() }
     by_model: c.by_model,
     by_day: c.by_day,
     environment, // { skills, agents, mcp_servers } — current setup, counts only
-    client: { name: "stravibe", version: "0.1.0" },
+    client: { name: "stravibe", version: "0.2.0" },
   };
 }
 

@@ -8,9 +8,7 @@
 // or edit it in a local copy (which the proprietary license forbids, but can't
 // technically prevent). To test against a staging server, change API_BASE here in
 // a local checkout.
-//
-// >>> Replace API_BASE with your production domain before publishing. <<<
-export const API_BASE = "http://localhost:3000";
+export const API_BASE = "https://stravibe.vercel.app";
 
 // Derived endpoints — keep paths in one place.
 export const INGEST_URL = `${API_BASE}/v1/import`;

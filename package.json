@@ -1,6 +1,6 @@
 {
   "name": "stravibe",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "straVIBE — scan your local AI coding-agent token usage and submit it to a leaderboard backend.",
   "type": "module",
   "engines": {
