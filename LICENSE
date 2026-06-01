@@ -1,16 +1,27 @@
-MIT License
+straVIBE — Proprietary Software License
+Copyright (c) 2026 Muhammad Hatif Mujahid. All Rights Reserved.
 
-Copyright (c) 2026 Muhammad Hatif Mujahid
+This software and its source code (the "Software") are the proprietary and
+confidential property of the copyright holder. The Software is made available
+on npm solely to be installed and run as an end-user tool against the official
+straVIBE service.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+NO LICENSE OR PERMISSION is granted, express or implied, to any person to:
+  (a) copy, reproduce, or store the Software except as strictly necessary for
+      normal installation and execution of the published package;
+  (b) modify, adapt, translate, or create derivative works of the Software;
+  (c) redistribute, republish, sublicense, sell, rent, or lease the Software,
+      in source or binary form, in whole or in part;
+  (d) reverse engineer, decompile, or disassemble the Software except to the
+      limited extent such restriction is prohibited by applicable law; or
+  (e) remove or alter any proprietary notices contained in the Software.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Any use of the Software is further subject to the straVIBE service terms.
+Submitting fabricated, tampered, or non-genuine usage data to the service, or
+accessing the service other than through an unmodified copy of this published
+package, is prohibited and may result in termination of access.
+
+Any other use requires the prior written permission of the copyright holder.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

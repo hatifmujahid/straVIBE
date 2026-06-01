@@ -48,20 +48,28 @@ export function buildPayload(store, { handle } = {}) {
  * The submission target is the hardcoded INGEST_URL — there is no --api/env
  * override, so installs always report to the one official backend.
  *
+ * Linked-only: submitting requires a credential from `stravibe login`. The
+ * backend rejects tokenless requests (no anonymous entries), so an unlinked
+ * sync throws NOT_LINKED before scanning or making any network call.
+ *
  * @param {object} opts
  * @param {string} [opts.handle]  optional public display name
  * @param {string} [opts.home]    override home dir (testing)
  */
 export async function sync({ handle, home } = {}) {
   const creds = loadCreds();
+  if (!creds?.token) {
+    const err = new Error("not linked — run `stravibe login` to link your GitHub/email account first");
+    err.code = "NOT_LINKED";
+    throw err;
+  }
 
   const { store, added } = await accumulate({ home });
   saveStore(store);
 
   const payload = buildPayload(store, { handle });
 
-  const headers = { "content-type": "application/json" };
-  if (creds?.token) headers.authorization = `Bearer ${creds.token}`; // attaches to GitHub/Google identity
+  const headers = { "content-type": "application/json", authorization: `Bearer ${creds.token}` };
 
   const res = await fetch(INGEST_URL, {
     method: "POST",

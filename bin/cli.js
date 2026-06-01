@@ -13,7 +13,29 @@ function flag(name, def) {
   return i !== -1 && argv[i + 1] ? argv[i + 1] : def;
 }
 const has = (name) => argv.includes(`--${name}`);
+const wantsHelp = argv.some((a) => ["-h", "-help", "--help", "help"].includes(a));
 const n = (x) => Number(x).toLocaleString("en-US");
+
+function printHelp() {
+  console.log(`straVIBE — track your AI coding-agent token usage
+
+Usage:
+  stravibe login  [--handle NAME]                   link account (browser) + submit last 90 days + enable auto-sync
+  stravibe scan   [--days 90] [--json]              show local rolling-window usage, no network
+  stravibe sync   [--handle NAME] [--quiet]         fold new calls into your all-time score + submit
+  stravibe install-hook   [--handle NAME]           auto-sync on every Claude Code session end
+  stravibe uninstall-hook                          disable auto-sync
+  stravibe whoami | logout | reset [--yes]
+  stravibe --help                                  show this help
+
+\`submit\` is a back-compat alias of \`sync\`. The score is cumulative and persisted at
+~/.stravibe/usage.json, so every LLM call keeps counting even after transcripts age out.
+
+The leaderboard backend is fixed (built in) — there is no --api/STRAVIBE_API override.
+Env: STRAVIBE_HANDLE
+Agents: Claude Code (verified); Codex/Gemini CLI (experimental); Cursor/Copilot need OAuth.
+Privacy: only token counts, model names, agent names, and timestamps leave your machine.`);
+}
 
 async function runScan() {
   const days = Number(flag("days", 90));
@@ -45,26 +67,49 @@ async function runSync() {
     const r = await sync({ handle });
     if (quiet) return;
     const delta = `+${n(r.added.total)} tokens / +${n(r.added.calls)} calls since last sync`;
-    const who = r.linked
-      ? `${r.linked.provider || "account"}:${r.linked.login || r.linked.email || r.linked.id}`
-      : r.payload.device_id + " (anonymous — run `stravibe login` to link)";
+    const who = `${r.linked?.provider || "account"}:${r.linked?.login || r.linked?.email || r.linked?.id}`;
     console.log(`synced all-time ${n(r.payload.totals.total)} tokens (${delta}) for ${who} → ${r.status}`);
     console.log(JSON.stringify(r.response, null, 2));
   } catch (e) {
-    if (quiet) return process.exit(0); // a failed background sync must never break Claude Code
+    if (quiet) return process.exit(0); // a failed/unlinked background sync must never break Claude Code
+    if (e.code === "NOT_LINKED") {
+      console.error("not linked. Run `stravibe login` to link your GitHub/email account — then your usage will sync.");
+      return process.exit(1);
+    }
     throw e;
   }
 }
 
+// `login` is the one-step onboarding command:
+//   1. open the browser to the straVIBE web app, which handles the actual
+//      GitHub/email sign-in choice — the CLI just opens it and polls,
+//   2. immediately fold the last ~90 days of local usage into the all-time score
+//      and submit it to the leaderboard,
+//   3. install the Claude Code SessionEnd hook so every future session auto-syncs.
 async function runLogin() {
-  const provider = flag("with"); // github | google
-  const user = await login({ provider });
+  const user = await login();
   console.log(`linked as ${user?.provider || ""} ${user?.login || user?.email || user?.id || "(unknown)"} ✓`);
-  // Offer auto-sync on first link.
+
+  const handle = flag("handle", process.env.STRAVIBE_HANDLE);
+
+  // Initial submission: count everything currently on disk (Claude Code keeps
+  // roughly the last 90 days of transcripts) and push the all-time total now.
+  try {
+    console.log("Calculating your usage from the last ~90 days and submitting…");
+    const r = await sync({ handle });
+    console.log(`submitted all-time ${n(r.payload.totals.total)} tokens / ${n(r.payload.calls)} calls → ${r.status}`);
+  } catch (e) {
+    console.log(`(initial submit failed: ${e.message} — run \`stravibe sync\` to retry)`);
+  }
+
+  // Auto-sync on every future Claude Code session end. Bake in the handle so
+  // background syncs keep the same leaderboard display name.
   if (!hookStatus().installed) {
-    const { file } = installHook({});
+    const { file } = installHook({ handle });
     console.log(`auto-sync enabled — Claude Code SessionEnd hook added to ${file}`);
     console.log(`(disable any time with \`stravibe uninstall-hook\`)`);
+  } else {
+    console.log("auto-sync already enabled — future sessions sync automatically.");
   }
 }
 
@@ -77,7 +122,7 @@ function runWhoami() {
   const c = loadCreds();
   const store = loadStore();
   const hook = hookStatus();
-  if (!c?.user) console.log("not linked (anonymous). Run `stravibe login --with github`.");
+  if (!c?.user) console.log("not linked. Run `stravibe login` to link your GitHub/email account (required to sync).");
   else console.log(`linked as ${c.user.provider || ""} ${c.user.login || c.user.email || c.user.id}`);
   console.log(`all-time score: ${n(store.cumulative.total)} tokens / ${n(store.cumulative.calls)} calls  (store: ${storePath()})`);
   if (store.last_synced) console.log(`last synced: ${store.last_synced}`);
@@ -107,6 +152,7 @@ function runReset() {
 }
 
 async function main() {
+  if (wantsHelp || cmd === undefined) return printHelp();
   switch (cmd) {
     case "scan":
       return runScan();
@@ -126,23 +172,8 @@ async function main() {
     case "reset":
       return runReset();
     default:
-      console.log(`straVIBE — track your AI coding-agent token usage
-
-Usage:
-  stravibe scan   [--days 90] [--json]              show local rolling-window usage, no network
-  stravibe sync   [--handle NAME] [--quiet]         fold new calls into your all-time score + submit
-  stravibe login  [--with github|google]            link account (browser) + enable auto-sync
-  stravibe install-hook   [--handle NAME]           auto-sync on every Claude Code session end
-  stravibe uninstall-hook                          disable auto-sync
-  stravibe whoami | logout | reset [--yes]
-
-\`submit\` is a back-compat alias of \`sync\`. The score is cumulative and persisted at
-~/.stravibe/usage.json, so every LLM call keeps counting even after transcripts age out.
-
-The leaderboard backend is fixed (built in) — there is no --api/STRAVIBE_API override.
-Env: STRAVIBE_HANDLE
-Agents: Claude Code (verified); Codex/Gemini CLI (experimental); Cursor/Copilot need OAuth.
-Privacy: only token counts, model names, agent names, and timestamps leave your machine.`);
+      console.log(`unknown command: ${cmd}\n`);
+      return printHelp();
   }
 }
 main().catch((e) => {

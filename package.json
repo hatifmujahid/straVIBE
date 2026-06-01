@@ -14,15 +14,17 @@
   },
   "files": [
     "bin",
-    "src"
+    "src",
+    "scripts"
   ],
   "scripts": {
     "scan": "node bin/cli.js scan",
-    "test": "node --test"
+    "test": "node --test",
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": ["claude", "claude-code", "llm", "tokens", "usage", "leaderboard"],
   "author": "Muhammad Hatif Mujahid",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hatifmujahid/straVIBE.git"

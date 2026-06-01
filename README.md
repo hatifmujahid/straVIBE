@@ -29,11 +29,27 @@ Only **token counts, model names, agent names, and timestamps** leave the machin
 Prompts, responses, file paths, and project/folder names are never read into the
 payload. See `src/collectors/*.js` — only numeric/metadata fields are touched.
 
+## Quick start
+
+```sh
+npm i -g stravibe     # install (prints a reminder to log in)
+stravibe login        # link GitHub/email → submit last 90 days → enable auto-sync
+```
+
+`login` is the only command most users ever run. It does three things:
+
+1. **Links your account** — opens a browser to the straVIBE web app, where you
+   sign in with **GitHub or email** (the web app handles the provider choice).
+2. **Submits your last ~90 days** — folds every local transcript into your
+   all-time score and pushes it to the leaderboard immediately.
+3. **Turns on auto-sync** — installs a Claude Code **SessionEnd** hook, so every
+   future session is counted and submitted automatically with no further action.
+
 ## Use
 
 ```sh
+npx stravibe login                 # link account (browser) + submit last 90 days + enable auto-sync
 npx stravibe scan --days 90        # local rolling-window view, no network
-npx stravibe login --with github   # link your GitHub/Google account + enable auto-sync
 npx stravibe sync                  # fold new calls into your all-time score + submit
 npx stravibe install-hook          # auto-sync on each Claude Code session end
 npx stravibe whoami | npx stravibe uninstall-hook | npx stravibe reset --yes
@@ -57,15 +73,16 @@ npx stravibe whoami | npx stravibe uninstall-hook | npx stravibe reset --yes
 Install globally from npm (one-liner — no API URL needed, it's baked in):
 
 ```sh
-npm i -g stravibe && stravibe sync --handle "your-name"
+npm i -g stravibe && stravibe login
 ```
 
-Then enable auto-sync once: `stravibe install-hook`.
+`login` submits your last 90 days and enables auto-sync in one step. Already
+linked and just want to push usage without re-auth? Run `stravibe sync`.
 
 Or run ad-hoc with no install — `npx` fetches the published package on demand:
 
 ```sh
-npx -y stravibe sync --handle "your-name"
+npx -y stravibe login
 ```
 
 ## Leaderboard metric note
