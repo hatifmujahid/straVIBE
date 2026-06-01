@@ -1,6 +1,8 @@
 # straVIBE
 
 [![CI](https://github.com/hatifmujahid/straVIBE/actions/workflows/ci.yml/badge.svg)](https://github.com/hatifmujahid/straVIBE/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/stravibe)](https://www.npmjs.com/package/stravibe)
+[![npm downloads](https://img.shields.io/npm/dm/stravibe)](https://www.npmjs.com/package/stravibe)
 
 Scan your local AI **coding-agent** token usage and submit aggregate counts to a
 leaderboard backend, optionally linked to your GitHub/Google account.
