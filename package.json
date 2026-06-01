@@ -14,8 +14,7 @@
   },
   "files": [
     "bin",
-    "src",
-    "install.sh"
+    "src"
   ],
   "scripts": {
     "scan": "node bin/cli.js scan",

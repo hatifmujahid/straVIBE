@@ -68,12 +68,6 @@ Or run ad-hoc with no install — `npx` fetches the published package on demand:
 npx -y stravibe sync --handle "your-name"
 ```
 
-Or the one-line curl installer (bootstraps via the npm package, scans + enables auto-sync):
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/hatifmujahid/straVIBE/master/install.sh | sh
-```
-
 ## Leaderboard metric note
 
 Claude Code is cache-heavy: ~2.2M input+output vs ~244M **cache-read** in this 90-day
