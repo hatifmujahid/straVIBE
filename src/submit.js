@@ -14,9 +14,11 @@ export { deviceId };
  * signals the totals are all-time (not a 90-day window), so the backend can keep
  * REPLACE semantics: this number only ever grows, and re-sending is safe.
  *
- * `environment` is a CURRENT inventory snapshot (skills/agents/MCP counts), not
- * part of the cumulative store — it reflects the setup at submit time. Counts
- * only; no skill/agent/server names are sent.
+ * `environment` is a CURRENT inventory snapshot (skills/agents/MCP counts) for
+ * THIS machine, not part of the cumulative store — it reflects the setup at
+ * submit time. The backend stores one CLI row per machine (keyed by device) and
+ * SUMS environment across the user's machines, so each PC contributes its own
+ * counts. Counts only; no skill/agent/server names are sent.
  */
 export function buildPayload(store, { handle, environment = countEnvironment() } = {}) {
   const c = store.cumulative;
@@ -39,7 +41,7 @@ export function buildPayload(store, { handle, environment = countEnvironment() }
     by_agent: c.by_agent,
     by_model: c.by_model,
     by_day: c.by_day,
-    environment, // { skills, agents, mcp_servers } — current setup, counts only
+    environment, // { skills, agents, mcp_servers } — this machine's setup, counts only
     client: { name: "stravibe", version: "0.2.0" },
   };
 }

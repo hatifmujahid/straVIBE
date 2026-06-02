@@ -170,19 +170,25 @@ without a valid token with `401`**. Do not create or update usage rows keyed by
   delta. Use **replace semantics**: store the new totals over the old. This is
   safe because the number only ever grows, and a dropped request self-heals on the
   next sync.
-- Key the usage record by the **authenticated user** resolved from the Bearer
-  token — never by `device_id`. (`device_id` is still in the payload; use it only
-  as secondary metadata, e.g. to note which machines a user submits from.)
+- **Own** the usage record by the **authenticated user** resolved from the Bearer
+  token, and key it per machine: one CLI row per (account, `device_id`). A user's
+  score is the **sum** of their device rows, so adding the CLI on a second PC
+  **adds** that PC's usage instead of overwriting the first. Apply the
+  monotonic-replace guard **per device row** (each machine's own cumulative only
+  grows).
 - Respond **2xx** on success (the CLI requires `res.ok`); `401` for missing/invalid
   token; any other non-2xx makes the CLI throw `backend <status>: <body>`. Return
   JSON (it's pretty-printed to the user) or plain text.
 - Apply the §7 validation **before** persisting (reject or clamp implausible
   values; never let a bad submission overwrite a good stored total).
-- `environment` is a **current** snapshot of the user's Claude Code setup —
-  counts of installed skills, agents (subagents), and configured MCP servers.
+- `environment` is a **current** snapshot of **this machine's** Claude Code setup
+  — counts of installed skills, agents (subagents), and configured MCP servers.
   Unlike `totals`, it is **not** cumulative: it reflects the setup at submit time
-  and may go up or down between syncs, so use replace semantics for it too.
-  **Counts only by design** — the CLI never sends skill/agent/server names
+  and may go up or down between syncs, so use **replace semantics** on the
+  device's own row. The user's **displayed** setup is the **sum** of `environment`
+  across their device rows, so each PC contributes its own counts. Refresh it even
+  when a device's token total is ignored as non-monotonic (it's independent of the
+  score). **Counts only by design** — the CLI never sends skill/agent/server names
   (privacy guarantee), so treat these purely as untrusted self-reported metrics.
 
 ---
