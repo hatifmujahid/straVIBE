@@ -105,11 +105,11 @@ async function runLogin() {
     console.log(`(initial submit failed: ${e.message} — run \`stravibe sync\` to retry)`);
   }
 
-  // Auto-sync on every future Claude Code session end. Bake in the handle so
+  // Auto-sync around every future Claude Code session. Bake in the handle so
   // background syncs keep the same leaderboard display name.
   if (!hookStatus().installed) {
-    const { file } = installHook({ handle });
-    console.log(`auto-sync enabled — Claude Code SessionEnd hook added to ${file}`);
+    const { file, events } = installHook({ handle });
+    console.log(`auto-sync enabled — Claude Code ${events.join(" + ")} hooks added to ${file}`);
     console.log(`(disable any time with \`stravibe uninstall-hook\`)`);
   } else {
     console.log("auto-sync already enabled — future sessions sync automatically.");
@@ -129,18 +129,19 @@ function runWhoami() {
   else console.log(`linked as ${c.user.provider || ""} ${c.user.login || c.user.email || c.user.id}`);
   console.log(`all-time score: ${n(store.cumulative.total)} tokens / ${n(store.cumulative.calls)} calls  (store: ${storePath()})`);
   if (store.last_synced) console.log(`last synced: ${store.last_synced}`);
-  console.log(`auto-sync hook: ${hook.installed ? "installed" : "not installed (run `stravibe install-hook`)"}`);
+  console.log(`auto-sync hook: ${hook.installed ? `installed (${hook.events.join(" + ")})` : "not installed (run `stravibe install-hook`)"}`);
 }
 
 function runInstallHook() {
   const handle = flag("handle", process.env.STRAVIBE_HANDLE);
   const invoker = flag("invoker");
   const command = flag("cmd");
-  const { file, command: cmd } = installHook({ command, invoker, handle });
-  console.log(`installed Claude Code SessionEnd hook → ${file}`);
+  const { file, command: cmd, events } = installHook({ command, invoker, handle });
+  console.log(`installed Claude Code ${events.join(" + ")} hooks → ${file}`);
   console.log(`  command: ${cmd}`);
   console.log(`  endpoint: ${INGEST_URL} (fixed)`);
-  console.log(`Your usage now syncs automatically every time a Claude Code session ends.`);
+  console.log(`Your usage now syncs automatically at the start and end of every Claude Code session.`);
+  console.log(`(SessionStart recovers any prior session closed abruptly before its SessionEnd hook could run.)`);
 }
 
 function runUninstallHook() {
