@@ -50,17 +50,28 @@ function writeFixtureHome() {
 }
 
 const ALLOWED_TOP_LEVEL = new Set([
-  "device_id", "handle", "mode", "since", "until",
+  "device_id", "handle", "mode", "period", "since", "until",
   "totals", "calls", "sessions", "agents", "by_agent", "by_model", "by_day",
   "environment", // { skills, agents, mcp_servers } — counts only, no names
   "client",
 ]);
 
+// Feed the all-time aggregate (the planted event is dated last month, so a
+// current-month window would be empty); the privacy invariant holds regardless
+// of which window is sent.
+function payloadFromStore(store, opts = {}) {
+  return buildPayload(store.cumulative, {
+    sessions: store.sessions.length,
+    deviceId: store.device_id,
+    ...opts,
+  });
+}
+
 test("payload contains only allowlisted top-level keys", async () => {
   const home = writeFixtureHome();
   try {
     const { store } = await accumulate({ store: emptyStore(), home });
-    const payload = buildPayload(store, { handle: "tester" });
+    const payload = payloadFromStore(store, { handle: "tester" });
     for (const k of Object.keys(payload)) {
       assert.ok(ALLOWED_TOP_LEVEL.has(k), `unexpected key in payload: ${k}`);
     }
@@ -81,7 +92,7 @@ test("no path / content / session-id leaks anywhere in the serialized payload", 
   const home = writeFixtureHome();
   try {
     const { store } = await accumulate({ store: emptyStore(), home });
-    const serialized = JSON.stringify(buildPayload(store, { handle: "tester" }));
+    const serialized = JSON.stringify(payloadFromStore(store, { handle: "tester" }));
 
     const forbidden = [
       LEAK.cwd,

@@ -1,4 +1,4 @@
-export { scanUsage, scanEvents, activeCollectors } from "./scan.js";
+export { scanUsage, scanEvents, activeCollectors, currentMonthKey, currentMonthStart } from "./scan.js";
 export { sync, submit, buildPayload } from "./submit.js";
 export { loadStore, saveStore, resetStore, accumulate, emptyStore, storePath } from "./store.js";
 export { installHook, uninstallHook, hookStatus, buildHookCommand } from "./hook.js";

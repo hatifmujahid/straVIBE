@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { deviceId } from "./identity.js";
-import { scanEvents, activeCollectors } from "./scan.js";
+import { scanEvents, activeCollectors, currentMonthStart, currentMonthKey } from "./scan.js";
 import { emptyAggregate, foldEvent } from "./aggregate.js";
 
 // The persistent, on-machine ledger. THIS is what makes a score monotonic:
@@ -64,7 +64,8 @@ export function resetStore() {
  * sync and skipped thereafter — a deliberate undercount over a double-count.
  *
  * Does NOT persist — the caller decides when to saveStore(). Returns the
- * (mutated) store and the delta added this run.
+ * (mutated) store, the delta added this run, and a CURRENT-MONTH aggregate
+ * (`month`) built in the same pass — the windowed view the leaderboard submits.
  *
  * @param {object} [opts]
  * @param {object} [opts.store=loadStore()]
@@ -79,7 +80,20 @@ export async function accumulate({ store = loadStore(), home = os.homedir(), now
   const maxTs = {}; // highest valid ts folded this run, per agent
   const touched = new Set();
 
+  // Current calendar-month window, accumulated in the SAME pass as the all-time
+  // store. Unlike the store, it is NOT watermark-gated: we want the full month
+  // every run (the backend replaces the month row), not just new events.
+  const now = nowIso ? new Date(nowIso) : new Date();
+  const monthCutoff = currentMonthStart(now);
+  const month = emptyAggregate();
+  const monthSessions = new Set();
+
   for await (const ev of scanEvents({ home })) {
+    if (!Number.isNaN(ev.ts) && ev.ts >= monthCutoff) {
+      foldEvent(month, ev, labels[ev.agent] || ev.agent);
+      if (ev.sessionId) monthSessions.add(`${ev.agent}:${ev.sessionId}`);
+    }
+
     const wm = store.watermarks[ev.agent]; // pre-run watermark (not mutated mid-loop)
 
     if (Number.isNaN(ev.ts)) {
@@ -104,7 +118,7 @@ export async function accumulate({ store = loadStore(), home = os.homedir(), now
 
   store.sessions = [...sessions];
   store.device_id = store.device_id || deviceId();
-  store.last_synced = nowIso || new Date().toISOString();
+  store.last_synced = now.toISOString();
   if (!store.first_synced) store.first_synced = store.last_synced;
 
   return {
@@ -112,6 +126,15 @@ export async function accumulate({ store = loadStore(), home = os.homedir(), now
     added: {
       calls: store.cumulative.calls - before.calls,
       total: store.cumulative.total - before.total,
+    },
+    // Current-month windowed view: aggregate counts + the period/since/until the
+    // backend needs to scope and reconcile the snapshot.
+    month: {
+      ...month,
+      sessions: monthSessions.size,
+      period: currentMonthKey(now),
+      since: new Date(monthCutoff).toISOString(),
+      until: store.last_synced,
     },
   };
 }

@@ -4,6 +4,20 @@ import { countEnvironment } from "./collectors/environment.js";
 import { emptyAggregate, foldEvent } from "./aggregate.js";
 
 /**
+ * Current calendar-month helpers (UTC). The leaderboard backend keys each
+ * snapshot by a "YYYY-MM" period and ranks per month, so submissions are scoped
+ * to the current month: `currentMonthStart` is the inclusive cutoff (ms) for
+ * which events count, `currentMonthKey` is the period tag we send.
+ */
+export function currentMonthKey(now = new Date()) {
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export function currentMonthStart(now = new Date()) {
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+}
+
+/**
  * Collectors that should run for a scan, given agent filters and on-disk
  * presence. Shared by the windowed scan and the persistent store.
  */

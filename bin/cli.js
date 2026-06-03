@@ -20,16 +20,17 @@ function printHelp() {
   console.log(`straVIBE — track your AI coding-agent token usage
 
 Usage:
-  stravibe login  [--handle NAME]                   link account (browser) + submit last 90 days + enable auto-sync
+  stravibe login  [--handle NAME]                   link account (browser) + submit this month + enable auto-sync
   stravibe scan   [--days 90] [--json]              show local rolling-window usage, no network
-  stravibe sync   [--handle NAME] [--quiet]         fold new calls into your all-time score + submit
+  stravibe sync   [--handle NAME] [--quiet]         fold new calls into your local store + submit this month
   stravibe install-hook   [--handle NAME]           auto-sync on every Claude Code session end
   stravibe uninstall-hook                          disable auto-sync
   stravibe whoami | logout | reset [--yes]
   stravibe --help                                  show this help
 
-\`submit\` is a back-compat alias of \`sync\`. The score is cumulative and persisted at
-~/.stravibe/usage.json, so every LLM call keeps counting even after transcripts age out.
+\`submit\` is a back-compat alias of \`sync\`. The leaderboard ranks per calendar month,
+so \`sync\` submits the CURRENT month's usage. A persistent all-time tally is still kept
+locally at ~/.stravibe/usage.json (see \`stravibe whoami\`) even after transcripts age out.
 
 The leaderboard backend is fixed (built in) — there is no --api/STRAVIBE_API override.
 Env: STRAVIBE_HANDLE
@@ -69,9 +70,9 @@ async function runSync() {
   try {
     const r = await sync({ handle });
     if (quiet) return;
-    const delta = `+${n(r.added.total)} tokens / +${n(r.added.calls)} calls since last sync`;
+    const delta = `+${n(r.added.total)} new tokens / +${n(r.added.calls)} calls since last sync`;
     const who = `${r.linked?.provider || "account"}:${r.linked?.login || r.linked?.email || r.linked?.id}`;
-    console.log(`synced all-time ${n(r.payload.totals.total)} tokens (${delta}) for ${who} → ${r.status}`);
+    console.log(`synced ${n(r.payload.totals.total)} tokens this month (${delta}) for ${who} → ${r.status}`);
     console.log(JSON.stringify(r.response, null, 2));
   } catch (e) {
     if (quiet) return process.exit(0); // a failed/unlinked background sync must never break Claude Code
@@ -86,8 +87,8 @@ async function runSync() {
 // `login` is the one-step onboarding command:
 //   1. open the browser to the straVIBE web app, which handles the actual
 //      GitHub/email sign-in choice — the CLI just opens it and polls,
-//   2. immediately fold the last ~90 days of local usage into the all-time score
-//      and submit it to the leaderboard,
+//   2. immediately submit this calendar month's local usage to the leaderboard
+//      (and seed the durable local all-time store from on-disk history),
 //   3. install the Claude Code SessionEnd hook so every future session auto-syncs.
 async function runLogin() {
   const user = await login();
@@ -95,12 +96,13 @@ async function runLogin() {
 
   const handle = flag("handle", process.env.STRAVIBE_HANDLE);
 
-  // Initial submission: count everything currently on disk (Claude Code keeps
-  // roughly the last 90 days of transcripts) and push the all-time total now.
+  // Initial submission: tally this calendar month's usage from local transcripts
+  // and push it now. (The full on-disk history still seeds your local all-time
+  // store, but the leaderboard ranks per month.)
   try {
-    console.log("Calculating your usage from the last ~90 days and submitting…");
+    console.log("Calculating this month's usage and submitting…");
     const r = await sync({ handle });
-    console.log(`submitted all-time ${n(r.payload.totals.total)} tokens / ${n(r.payload.calls)} calls → ${r.status}`);
+    console.log(`submitted ${n(r.payload.totals.total)} tokens / ${n(r.payload.calls)} calls this month → ${r.status}`);
   } catch (e) {
     console.log(`(initial submit failed: ${e.message} — run \`stravibe sync\` to retry)`);
   }
