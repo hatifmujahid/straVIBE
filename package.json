@@ -1,6 +1,6 @@
 {
   "name": "stravibe",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "straVIBE — scan your local AI coding-agent token usage and submit it to a leaderboard backend.",
   "type": "module",
   "engines": {
@@ -22,7 +22,14 @@
     "test": "node --test",
     "postinstall": "node scripts/postinstall.js"
   },
-  "keywords": ["claude", "claude-code", "llm", "tokens", "usage", "leaderboard"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "llm",
+    "tokens",
+    "usage",
+    "leaderboard"
+  ],
   "author": "Muhammad Hatif Mujahid",
   "license": "UNLICENSED",
   "repository": {
